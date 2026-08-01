@@ -15,6 +15,22 @@
 - 📦 **무의존** — 런타임 의존성 없음(react/react-dom 은 peer), 이미지·폰트·CSS 파일 0개
 - 🧩 **props 주입형** — 물리 밸런스, UI 문자열(i18n), 색상, 저장, 종료 콜백 전부 커스텀
 
+## 바로 플레이 🕹️
+
+설치 없이 브라우저에서 바로 확인하세요 — 실제 Next.js(App Router) 호스트에 이식된 데모입니다:
+
+**https://joop-arcade-engine-next-demo.vercel.app**
+
+| 페이지 | 보여주는 것 |
+| --- | --- |
+| [/play](https://joop-arcade-engine-next-demo.vercel.app/play) | `<ArcadeGame>` 최소 통합 + `onGameOver` 활용 |
+| [/play/custom](https://joop-arcade-engine-next-demo.vercel.app/play/custom) | 공개 props 전체 — 밸런스·영어 i18n·강조색·무음·저장 키 프리셋 |
+| [/headless](https://joop-arcade-engine-next-demo.vercel.app/headless) | `/core` 순수 함수만으로 만든 DOM 렌더러 (렌더러 독립성 실증) |
+
+데모 [소스](https://github.com/space-joops/joop-arcade-engine-next-demo)와
+[이식성·모듈화 평가 리포트](https://github.com/space-joops/joop-arcade-engine-next-demo/blob/main/EVALUATION.md)도
+공개되어 있습니다. 로컬에서는 클론 후 `npm run dev` 로 Vite 데모를 실행할 수 있습니다.
+
 ## 설치
 
 ### 릴리스 tarball URL (기본 — 클론·빌드 없이 바로)
