@@ -24,7 +24,7 @@
 (git 불필요, 설치 시 빌드 없음, lock 파일에 integrity 해시 고정):
 
 ```bash
-npm install https://github.com/space-joops/joop-arcade-engine/releases/download/v0.1.0/joop-arcade-engine-0.1.0.tgz
+npm install https://github.com/space-joops/joop-arcade-engine/releases/download/v0.1.1/joop-arcade-engine-0.1.1.tgz
 # peer 의존성
 npm install react react-dom
 ```
@@ -38,7 +38,7 @@ pnpm / yarn 도 같은 URL 을 그대로 지원합니다 (`pnpm add <url>`, `yar
 
 ```bash
 npm install space-joops/joop-arcade-engine           # 최신 main
-npm install space-joops/joop-arcade-engine#v0.1.0    # 태그·커밋 고정
+npm install space-joops/joop-arcade-engine#v0.1.1    # 태그·커밋 고정
 ```
 
 ### npm 레지스트리 (배포 후)

@@ -1,6 +1,6 @@
 {
   "name": "joop-arcade-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "우주 쓰레기 수거 아케이드 게임 엔진 — 관성 물리 · 5원 조이스틱 · React 컴포넌트",
   "keywords": [
     "game",

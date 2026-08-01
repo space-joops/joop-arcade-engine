@@ -5,6 +5,14 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-01
+
+### Changed
+
+- (내부 구조, PR #1) `ArcadeGame.tsx`(1,177줄)를 역할별 모듈로 분리 —
+  `render.ts`(캔버스 드로잉) / `overlays.tsx`(시작·종료 화면) /
+  `types.ts`(공개 타입·라벨) / `theme.ts`(색·스타일). 동작·공개 API 변경 없음
+
 ## [0.1.0] - 2026-08-01
 
 라이선스: **AGPL-3.0** — 수정본을 배포하거나 네트워크 서비스로 제공할 때
@@ -31,4 +39,5 @@
 - 문서: README, 아키텍처, API 레퍼런스, 커스터마이징 가이드, 기여 가이드,
   행동 강령, 이슈/PR 템플릿
 
+[0.1.1]: https://github.com/space-joops/joop-arcade-engine/releases/tag/v0.1.1
 [0.1.0]: https://github.com/space-joops/joop-arcade-engine/releases/tag/v0.1.0
