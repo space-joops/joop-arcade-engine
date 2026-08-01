@@ -3,6 +3,7 @@ node_modules/
 
 # 빌드 산출물
 dist/
+*.tgz
 
 # 데모 빌드
 demo/dist/

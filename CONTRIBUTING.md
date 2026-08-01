@@ -169,13 +169,18 @@ it("연료가 없으면 가속하지 않는다(관성만 유지)", () => {
 
 ```bash
 # 1. CHANGELOG.md 의 Unreleased 를 버전으로 확정
-# 2. package.json version 올리기
+# 2. package.json version 올리기 (git 태그도 함께 생성됨)
 npm version minor
 # 3. 빌드·테스트 최종 확인
 npm test && npm run build
-# 4. 배포
-npm publish
+# 4. 푸시 + GitHub Release 생성
 git push --follow-tags
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
+# 5. 빌드된 패키지 tarball 을 릴리스에 첨부 — 설치 기본 경로!
+#    (README 의 tarball URL 설치가 이걸 참조한다. 반드시 업로드할 것)
+npm pack
+gh release upload vX.Y.Z joop-arcade-engine-X.Y.Z.tgz
+# 6. (npm 레지스트리 배포 시) npm publish
 ```
 
 ## 기여물의 라이선스

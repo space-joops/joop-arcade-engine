@@ -17,27 +17,28 @@
 
 ## 설치
 
-### GitHub 저장소에서 바로 설치 (현재 권장 — 아직 npm 미배포)
+### 릴리스 tarball URL (기본 — 클론·빌드 없이 바로)
+
+[Releases](https://github.com/space-joops/joop-arcade-engine/releases)에 빌드
+완료된 패키지가 첨부되어 있어, URL 만으로 몇 초 만에 설치됩니다
+(git 불필요, 설치 시 빌드 없음, lock 파일에 integrity 해시 고정):
 
 ```bash
-npm install space-joops/joop-arcade-engine
+npm install https://github.com/space-joops/joop-arcade-engine/releases/download/v0.1.0/joop-arcade-engine-0.1.0.tgz
 # peer 의존성
 npm install react react-dom
 ```
 
-설치 시 npm 이 저장소를 클론하고 `prepare` 스크립트로 자동 빌드하므로 별도
-작업이 필요 없습니다. 버전을 고정하고 싶으면 커밋/태그/브랜치를 지정하세요:
+pnpm / yarn 도 같은 URL 을 그대로 지원합니다 (`pnpm add <url>`, `yarn add <url>`).
+
+### git 저장소로 설치 (최신 main 추적·개발용)
+
+릴리스 전 최신 코드를 쓰고 싶을 때. npm 이 저장소를 클론한 뒤 `prepare`
+스크립트로 자동 빌드하므로 별도 작업은 없지만, 설치가 그만큼 느립니다:
 
 ```bash
-npm install space-joops/joop-arcade-engine#89621a2   # 특정 커밋
-npm install space-joops/joop-arcade-engine#v0.1.0    # 태그(릴리스 후)
-```
-
-pnpm / yarn 도 같은 형식을 지원합니다:
-
-```bash
-pnpm add space-joops/joop-arcade-engine
-yarn add space-joops/joop-arcade-engine
+npm install space-joops/joop-arcade-engine           # 최신 main
+npm install space-joops/joop-arcade-engine#v0.1.0    # 태그·커밋 고정
 ```
 
 ### npm 레지스트리 (배포 후)
