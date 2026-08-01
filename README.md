@@ -17,10 +17,33 @@
 
 ## 설치
 
+### GitHub 저장소에서 바로 설치 (현재 권장 — 아직 npm 미배포)
+
 ```bash
-npm install joop-arcade-engine
+npm install space-joops/joop-arcade-engine
 # peer 의존성
 npm install react react-dom
+```
+
+설치 시 npm 이 저장소를 클론하고 `prepare` 스크립트로 자동 빌드하므로 별도
+작업이 필요 없습니다. 버전을 고정하고 싶으면 커밋/태그/브랜치를 지정하세요:
+
+```bash
+npm install space-joops/joop-arcade-engine#89621a2   # 특정 커밋
+npm install space-joops/joop-arcade-engine#v0.1.0    # 태그(릴리스 후)
+```
+
+pnpm / yarn 도 같은 형식을 지원합니다:
+
+```bash
+pnpm add space-joops/joop-arcade-engine
+yarn add space-joops/joop-arcade-engine
+```
+
+### npm 레지스트리 (배포 후)
+
+```bash
+npm install joop-arcade-engine
 ```
 
 ## 빠른 시작 (React)

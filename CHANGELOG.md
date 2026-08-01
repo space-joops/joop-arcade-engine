@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- `prepare` 스크립트 — npm 배포 전에도 GitHub 저장소 주소로 직접 설치 가능
+  (`npm install space-joops/joop-arcade-engine`, 설치 시 자동 빌드)
+
 ### Changed
 
 - 라이선스를 MIT 에서 **AGPL-3.0** 으로 전환 — 수정본을 배포하거나 네트워크
