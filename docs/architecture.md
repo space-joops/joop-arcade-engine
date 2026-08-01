@@ -8,13 +8,19 @@
 ```
 core/arcade.ts   ← 순수 함수만. DOM·React·부수효과 없음. 어디서든 import 가능.
 core/sound.ts    ← Web Audio 싱글턴. 브라우저 전용(SSR 에서는 no-op).
-react/ArcadeGame.tsx
-   └─ imports core/arcade + core/sound
-      렌더(캔버스)·입력(포인터/키보드)·게임 루프(rAF)·React UI 를 담당.
+
+react/ (모두 core 를 향해서만 의존)
+├── types.ts        공개 타입·기본 라벨 (ArcadeGameProps, ArcadeLabels…)
+├── theme.ts        색 팔레트·스타일·mixHex/flameColor
+├── render.ts       캔버스 드로잉 — Scene 인자를 받아 그리기만(상태 변경 없음)
+├── overlays.tsx    시작/종료 화면·텔레메트리 바 (상태 없는 프레젠테이션)
+└── ArcadeGame.tsx  게임 루프(rAF)·입력·상태 — 위 모듈들을 조립하는 본체
 ```
 
 **의존 방향은 한쪽뿐입니다**: `react → core`. core 가 react 를 import 하는 순간
 헤드리스 사용(`joop-arcade-engine/core`)이 깨지므로 PR 에서 반드시 거부됩니다.
+react/ 안에서도 마찬가지로 한 방향입니다: `ArcadeGame → (render·overlays) → (theme·types)`.
+render.ts 의 draw* 함수는 **게임 상태를 절대 변경하지 않습니다** — 읽고 그리기만.
 
 ## 좌표계 — 월드 단위
 

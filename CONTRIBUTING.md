@@ -59,7 +59,11 @@ HMR 로 즉시 반영됩니다.
 src/core/arcade.ts        # 물리·규칙·밸런스 데이터 (순수 함수만!)
 src/core/arcade.test.ts   # 코어 테스트 — 코어를 고치면 여기도
 src/core/sound.ts         # 효과음 합성 (브라우저 전용)
-src/react/ArcadeGame.tsx  # 렌더·입력·게임 루프·UI
+src/react/ArcadeGame.tsx  # 게임 루프·입력·상태 배선 (컴포넌트 본체)
+src/react/render.ts       # 캔버스 드로잉 함수 (그리기만, 상태 변경 없음)
+src/react/overlays.tsx    # 시작/종료 화면·텔레메트리 바
+src/react/types.ts        # 공개 타입·기본 라벨
+src/react/theme.ts        # 색 팔레트·스타일
 demo/                     # 개발용 놀이터
 docs/                     # 상세 문서 — 동작을 바꾸면 여기도 갱신
 ```
@@ -69,12 +73,14 @@ docs/                     # 상세 문서 — 동작을 바꾸면 여기도 갱�
 | 하고 싶은 것 | 파일 |
 | --- | --- |
 | 밸런스 기본값 변경 | `src/core/arcade.ts` 의 `DEFAULT_ARCADE_CONFIG` |
-| 새 아이템/천체 | `src/core/arcade.ts` (+ 천체는 `drawCelestial` 분기) |
+| 새 아이템/천체 | `src/core/arcade.ts` (+ 천체는 `render.ts` 의 `drawCelestial` 분기) |
 | 물리 규칙 | `src/core/arcade.ts` 의 `applyThrust` 등 + **테스트 필수** |
-| 그래픽·연출 | `src/react/ArcadeGame.tsx` 의 draw* 함수들 |
-| 조작감 | `joystickInput`(코어) 또는 입력 핸들러(컴포넌트) |
+| 그래픽·연출 | `src/react/render.ts` 의 draw* 함수들 |
+| 색·스타일 | `src/react/theme.ts` |
+| 시작/종료 화면·하단 바 | `src/react/overlays.tsx` |
+| 조작감·게임 루프 | `joystickInput`(코어) 또는 `src/react/ArcadeGame.tsx` |
 | 효과음 | `src/core/sound.ts` |
-| UI 문자열 | `DEFAULT_ARCADE_LABELS` (컴포넌트 상단) |
+| UI 문자열 | `src/react/types.ts` 의 `DEFAULT_ARCADE_LABELS` |
 
 시작 전에 [docs/architecture.md](docs/architecture.md)를 한 번 읽어보세요 —
 게임 루프의 단계 순서와 설계 불변식이 정리되어 있습니다.

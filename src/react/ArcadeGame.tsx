@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import {
   CELESTIALS,
   DEFAULT_ARCADE_CONFIG,
@@ -32,25 +31,14 @@ import {
   type FloaterText,
   type Scene,
 } from "./render";
+import { GameOverOverlay, ReadyOverlay, TelemetryBar } from "./overlays";
 import {
   DEFAULT_ARCADE_LABELS,
   type ArcadeGameProps,
   type ArcadeLabels,
   type ArcadeSummary,
 } from "./types";
-import {
-  AMBER,
-  BG_DEEP,
-  DANGER,
-  FG,
-  FG_DIM,
-  barBtnStyle,
-  flameColor,
-  ghostBtnStyle,
-  mixHex,
-  overlayStyle,
-  primaryBtnStyle,
-} from "./theme";
+import { AMBER, BG_DEEP, DANGER, FG, FG_DIM, flameColor, mixHex } from "./theme";
 
 export { DEFAULT_ARCADE_LABELS } from "./types";
 export type { ArcadeGameProps, ArcadeLabels, ArcadeSummary } from "./types";
@@ -541,14 +529,6 @@ export function ArcadeGame({
 
   const accent = accentColor;
 
-  const renderMultiline = (text: string): ReactNode =>
-    text.split("\n").map((line, i) => (
-      <span key={i}>
-        {i > 0 && <br />}
-        {line}
-      </span>
-    ));
-
   return (
     <div
       className={className}
@@ -598,134 +578,30 @@ export function ArcadeGame({
           </div>
         )}
 
-        {/* 시작 화면 */}
         {phase === "ready" && (
-          <div style={overlayStyle}>
-            <div>
-              <h1 style={{ fontSize: 34, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }}>
-                {L.title}
-              </h1>
-              <p
-                style={{
-                  marginTop: 12,
-                  maxWidth: 384,
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  color: FG_DIM,
-                }}
-              >
-                {renderMultiline(L.subtitle)}
-              </p>
-            </div>
-            <ul
-              style={{
-                listStyle: "none",
-                margin: 0,
-                padding: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                fontSize: 14,
-                color: FG_DIM,
-              }}
-            >
-              {L.howTo.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-            <button onClick={() => setPhase("playing")} style={{ ...primaryBtnStyle(accent), fontSize: 18 }}>
-              {L.start}
-            </button>
-          </div>
+          <ReadyOverlay labels={L} accent={accent} onStart={() => setPhase("playing")} />
         )}
 
-        {/* 게임 오버 */}
         {phase === "over" && summary && (
-          <div style={overlayStyle}>
-            <h2 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{L.gameOver}</h2>
-            <div>
-              <p style={{ fontSize: 18, margin: 0 }}>
-                {L.resultCollected}{" "}
-                <span
-                  style={{
-                    fontFamily: "ui-monospace, monospace",
-                    fontSize: 30,
-                    fontWeight: 700,
-                    color: accent,
-                  }}
-                >
-                  {summary.collected.toLocaleString()}
-                </span>{" "}
-                {L.pieces} · {summary.eaten}
-                {L.eatenUnit}
-              </p>
-              <p style={{ marginTop: 8, fontSize: 14, color: FG_DIM }}>
-                {summary.newBest ? (
-                  <span style={{ fontWeight: 700, color: AMBER }}>{L.newBest}</span>
-                ) : (
-                  <>
-                    🏆 {L.best} {summary.best.toLocaleString()} {L.pieces}
-                  </>
-                )}
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={() => setPhase("playing")} style={primaryBtnStyle(accent)}>
-                {L.retry}
-              </button>
-              <button onClick={() => setPhase("ready")} style={ghostBtnStyle}>
-                {L.home}
-              </button>
-            </div>
-          </div>
+          <GameOverOverlay
+            labels={L}
+            accent={accent}
+            summary={summary}
+            onRetry={() => setPhase("playing")}
+            onHome={() => setPhase("ready")}
+          />
         )}
       </div>
 
-      {/* 하단 텔레메트리 바 */}
-      <div
-        style={{
-          display: "flex",
-          height: 56,
-          flexShrink: 0,
-          alignItems: "center",
-          gap: 12,
-          borderTop: "1px solid #1c2b45",
-          background: "#070c1a",
-          padding: "0 16px",
-        }}
-      >
-        <span style={{ fontSize: 14 }} aria-hidden>
-          ⛽
-        </span>
-        <div
-          style={{
-            height: 10,
-            flex: 1,
-            overflow: "hidden",
-            borderRadius: 9999,
-            background: "#1c2b45",
-          }}
-        >
-          <div
-            ref={fuelFillRef}
-            style={{ height: "100%", width: "100%", borderRadius: 9999, background: AMBER }}
-          />
-        </div>
-        {sound && (
-          <button
-            onClick={toggleMute}
-            aria-label={muted ? L.soundOnAria : L.soundOffAria}
-            style={barBtnStyle}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
-        )}
-        {phase === "playing" && (
-          <button onClick={() => endGameRef.current()} style={barBtnStyle}>
-            {L.quit}
-          </button>
-        )}
-      </div>
+      <TelemetryBar
+        labels={L}
+        muted={muted}
+        showSound={sound}
+        showQuit={phase === "playing"}
+        fuelFillRef={fuelFillRef}
+        onToggleMute={toggleMute}
+        onQuit={() => endGameRef.current()}
+      />
     </div>
   );
 }

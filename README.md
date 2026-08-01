@@ -128,7 +128,11 @@ src/
 ├── core/arcade.ts       # 물리·게임 규칙 — 순수 함수만, DOM/React 없음
 ├── core/arcade.test.ts  # 코어 단위 테스트
 ├── core/sound.ts        # Web Audio 합성 효과음 (브라우저 전용, SSR no-op)
-├── react/ArcadeGame.tsx # 캔버스 게임 컴포넌트 (렌더·입력·루프)
+├── react/ArcadeGame.tsx # 게임 루프·입력·상태 배선 (컴포넌트 본체)
+├── react/render.ts      # 캔버스 드로잉 함수 (별밭·천체·줍스·조이스틱…)
+├── react/overlays.tsx   # 시작/종료 화면·텔레메트리 바 (프레젠테이션)
+├── react/types.ts       # 공개 타입·기본 라벨 (ArcadeGameProps, ArcadeLabels…)
+├── react/theme.ts       # 색 팔레트·스타일·hex 유틸
 ├── core.ts              # 헤드리스 엔트리 → "joop-arcade-engine/core"
 └── index.ts             # 전체 엔트리 → "joop-arcade-engine"
 demo/                    # Vite 데모 (npm run dev)
