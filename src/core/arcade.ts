@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // 아케이드(우주 수거) 물리·로직 — 순수 함수(부수효과 없음).
 // space-joops/joop-03 PR #64 의 @joop/arcade-engine core/arcade.ts 에서 포팅.
 //

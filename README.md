@@ -134,4 +134,8 @@ git log --oneline --reverse
 ## 크레딧 & 라이선스
 
 - 원작 게임 디자인: [space-joops/joop-03](https://github.com/space-joops/joop-03) 의 아케이드 모드 (M5 / EPIC 7)
-- [MIT License](LICENSE)
+- [AGPL-3.0](LICENSE) — 이 엔진을 수정해 배포하거나 **웹서비스로 제공**하는 경우,
+  해당 서비스 사용자에게 수정된 소스 전체를 공개해야 합니다. 개선이 커뮤니티로
+  돌아오게 하기 위한 선택입니다.
+- AGPL 조건을 따르기 어려운 상업적 사용은 별도 라이선스 협의가 가능합니다 —
+  이슈로 문의해 주세요.
