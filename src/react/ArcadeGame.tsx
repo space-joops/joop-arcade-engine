@@ -10,14 +10,28 @@ import {
   collides,
   joystickInput,
   pickArcadeItem,
-  starHash,
-  sunTintAlpha,
   type ArcadeConfig,
   type ArcadeItem,
-  type Celestial,
   type Vec,
 } from "../core/arcade";
 import * as sfx from "../core/sound";
+import {
+  drawBackground,
+  drawCelestial,
+  drawExhaust,
+  drawFloaters,
+  drawFuelOutHint,
+  drawItems,
+  drawJoop,
+  drawJoystick,
+  drawMagnetArms,
+  drawSpecks,
+  drawStars,
+  drawSunTint,
+  type ExhaustParticle,
+  type FloaterText,
+  type Scene,
+} from "./render";
 import {
   DEFAULT_ARCADE_LABELS,
   type ArcadeGameProps,
@@ -30,8 +44,6 @@ import {
   DANGER,
   FG,
   FG_DIM,
-  METAL_COLORS,
-  STAR_COLORS,
   barBtnStyle,
   flameColor,
   ghostBtnStyle,
@@ -151,23 +163,16 @@ export function ArcadeGame({
 
     type Floating = { item: ArcadeItem; pos: Vec; vel: Vec; rot: number; rotV: number };
     const items: Floating[] = [];
-    type Floater = { pos: Vec; text: string; color: string; life: number; big?: boolean };
-    const floaters: Floater[] = [];
-    const pushFloater = (fl: Floater) => {
+    const floaters: FloaterText[] = [];
+    const pushFloater = (fl: FloaterText) => {
       floaters.push(fl);
       if (floaters.length > 12) floaters.shift();
     };
 
     // 분사가스 파티클: r5→11px · 불투명 .35→.08 · 수명 600ms · 초당 12×세기 · 상한 60.
-    type Exhaust = { pos: Vec; vel: Vec; age: number; color: string };
-    const exhaust: Exhaust[] = [];
+    const exhaust: ExhaustParticle[] = [];
     let exhaustAcc = 0;
     const flame = (s: number) => flameColor(accent, s);
-
-    const toScreen = (p: Vec) => ({
-      x: W / 2 + (p.x - joop.pos.x) * unit(),
-      y: H / 2 + (p.y - joop.pos.y) * unit(),
-    });
 
     // 뷰포트 가장자리 밖에서 진입, 표류하며 가로지른다(상하좌우 등장)
     const spawn = () => {
@@ -313,231 +318,6 @@ export function ArcadeGame({
       onGameOverRef.current?.(result);
     };
     endGameRef.current = endGame;
-
-    // ── 렌더 헬퍼
-    const drawStars = (layerK: number, parallax: number, cell: number, rMax: number) => {
-      const u = unit();
-      const ox = joop.pos.x * u * parallax;
-      const oy = joop.pos.y * u * parallax;
-      const gx0 = Math.floor(ox / cell) - 1;
-      const gy0 = Math.floor(oy / cell) - 1;
-      const gx1 = Math.floor((ox + W) / cell) + 1;
-      const gy1 = Math.floor((oy + H) / cell) + 1;
-      for (let gx = gx0; gx <= gx1; gx++) {
-        for (let gy = gy0; gy <= gy1; gy++) {
-          const x = gx * cell - ox + starHash(gx, gy, layerK * 4) * cell;
-          const y = gy * cell - oy + starHash(gx, gy, layerK * 4 + 1) * cell;
-          if (x < -4 || x > W + 4 || y < -4 || y > H + 4) continue;
-          const r = 0.4 + starHash(gx, gy, layerK * 4 + 2) * rMax;
-          const cRoll = starHash(gx, gy, layerK * 4 + 3);
-          ctx.fillStyle = STAR_COLORS[Math.floor(cRoll * STAR_COLORS.length)];
-          // 은은한 반짝임 — 시드 위상이라 별마다 다르게, reduced-motion 은 고정
-          const tw = reduceMotion
-            ? 0.8
-            : 0.65 + 0.35 * Math.sin(elapsed * (0.6 + cRoll * 1.4) + cRoll * 12);
-          ctx.globalAlpha = (0.35 + 0.55 * starHash(gx, gy, layerK * 4 + 5)) * tw;
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-    };
-
-    // 미세 금속 파편(장식) — 전경 가까운 시차로 속도감을 준다. 수거 판정 없음.
-    const drawSpecks = () => {
-      const u = unit();
-      const parallax = 0.85;
-      const cell = 90;
-      const ox = joop.pos.x * u * parallax;
-      const oy = joop.pos.y * u * parallax;
-      const gx0 = Math.floor(ox / cell) - 1;
-      const gy0 = Math.floor(oy / cell) - 1;
-      const gx1 = Math.floor((ox + W) / cell) + 1;
-      const gy1 = Math.floor((oy + H) / cell) + 1;
-      for (let gx = gx0; gx <= gx1; gx++) {
-        for (let gy = gy0; gy <= gy1; gy++) {
-          if (starHash(gx, gy, 90) > 0.55) continue; // 밀도 55%
-          const x = gx * cell - ox + starHash(gx, gy, 91) * cell;
-          const y = gy * cell - oy + starHash(gx, gy, 92) * cell;
-          ctx.fillStyle = METAL_COLORS[Math.floor(starHash(gx, gy, 93) * METAL_COLORS.length)];
-          ctx.globalAlpha = 0.25 + starHash(gx, gy, 94) * 0.3;
-          const s = 1 + starHash(gx, gy, 95) * 2;
-          ctx.fillRect(x, y, s, s * 0.6);
-        }
-      }
-      ctx.globalAlpha = 1;
-    };
-
-    const drawCelestial = (c: Celestial) => {
-      const u = unit();
-      const x = W / 2 + (c.x - joop.pos.x) * c.parallax * u;
-      const y = H / 2 + (c.y - joop.pos.y) * c.parallax * u;
-      const r = (c.size / 2) * u;
-
-      // 화면 밖이면 에지 방향 힌트만
-      if (x < -r || x > W + r || y < -r || y > H + r) {
-        const cx = Math.max(28, Math.min(W - 28, x));
-        const cy = Math.max(28, Math.min(H - 28, y));
-        ctx.globalAlpha = 0.55;
-        ctx.strokeStyle = c.hint.color;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 11, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = c.hint.color;
-        ctx.font = "bold 11px monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(c.hint.glyph, cx, cy + 0.5);
-        ctx.globalAlpha = 1;
-        return;
-      }
-
-      if (c.kind === "earth") {
-        // 대기 글로우
-        const glow = ctx.createRadialGradient(x, y, r * 0.9, x, y, r * 1.12);
-        glow.addColorStop(0, "rgba(56, 224, 240, 0.25)");
-        glow.addColorStop(1, "rgba(56, 224, 240, 0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(x, y, r * 1.12, 0, Math.PI * 2);
-        ctx.fill();
-        const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
-        g.addColorStop(0, "#2e6cb8");
-        g.addColorStop(0.55, "#1a4585");
-        g.addColorStop(1, "#081c40");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-        // 대륙 느낌의 블롭 몇 개
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.fillStyle = "rgba(38, 110, 74, 0.55)";
-        ctx.beginPath();
-        ctx.ellipse(x - r * 0.35, y - r * 0.15, r * 0.3, r * 0.18, -0.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(x + r * 0.25, y + r * 0.35, r * 0.24, r * 0.14, 0.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "rgba(255, 255, 255, 0.14)";
-        ctx.beginPath();
-        ctx.ellipse(x + r * 0.1, y - r * 0.45, r * 0.4, r * 0.1, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-        // 심우주 쪽(아래) 터미네이터 음영
-        const shade = ctx.createRadialGradient(x, y - r * 0.5, r * 0.4, x, y, r);
-        shade.addColorStop(0, "rgba(2, 6, 18, 0)");
-        shade.addColorStop(1, "rgba(2, 6, 18, 0.55)");
-        ctx.fillStyle = shade;
-        ctx.fillRect(x - r, y - r, r * 2, r * 2);
-        ctx.restore();
-      } else if (c.kind === "moon") {
-        const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
-        g.addColorStop(0, "#d8d2c4");
-        g.addColorStop(1, "#8a8478");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "rgba(90, 85, 75, 0.5)";
-        for (const [cx, cy, cr] of [
-          [-0.3, -0.2, 0.16],
-          [0.25, 0.1, 0.12],
-          [-0.05, 0.4, 0.1],
-          [0.4, -0.35, 0.08],
-        ]) {
-          ctx.beginPath();
-          ctx.arc(x + cx * r, y + cy * r, cr * r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else {
-        // 태양 — 코로나 + 본체
-        const corona = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2.2);
-        corona.addColorStop(0, "rgba(255, 178, 62, 0.35)");
-        corona.addColorStop(1, "rgba(255, 178, 62, 0)");
-        ctx.fillStyle = corona;
-        ctx.beginPath();
-        ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
-        ctx.fill();
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, "#fff7d6");
-        g.addColorStop(0.7, "#ffd25e");
-        g.addColorStop(1, "#ffb23e");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    };
-
-    const drawJoop = (dir: Vec | null, strength: number) => {
-      const u = unit();
-      const r = JOOP_RADIUS * u * (1 + joop.collectFx * 0.3);
-      const x = W / 2;
-      const y = H / 2;
-
-      // 분사염 — 분사 반대 방향 티어드롭, 세기 따라 시안→앰버→백열
-      if (dir && strength > 0 && fuel > 0) {
-        const len = r * (1.1 + strength * 1.3) * (reduceMotion ? 1 : 0.85 + Math.random() * 0.3);
-        const fx = -dir.x;
-        const fy = -dir.y;
-        const px = -fy;
-        const py = fx;
-        ctx.globalAlpha = 0.85;
-        ctx.fillStyle = flame(strength);
-        ctx.beginPath();
-        ctx.moveTo(x + fx * r * 0.9 + px * r * 0.35, y + fy * r * 0.9 + py * r * 0.35);
-        ctx.lineTo(x + fx * (r + len), y + fy * (r + len));
-        ctx.lineTo(x + fx * r * 0.9 - px * r * 0.35, y + fy * r * 0.9 - py * r * 0.35);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-
-      // 몸통 — accentColor 에서 파생한 명·암 그라데이션
-      const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.15, x, y, r);
-      g.addColorStop(0, accentLight);
-      g.addColorStop(0.45, accent);
-      g.addColorStop(1, accentDark);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-      // 수거 순간 링 펄스
-      if (joop.collectFx > 0) {
-        ctx.globalAlpha = joop.collectFx * 1.6;
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(x, y, r * (1.15 + (0.35 - joop.collectFx)), 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-      // 바이저 + 눈
-      ctx.fillStyle = "#08262e";
-      ctx.beginPath();
-      ctx.ellipse(x, y - r * 0.15, r * 0.62, r * 0.42, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#e7fdff";
-      ctx.beginPath();
-      ctx.arc(x - r * 0.24, y - r * 0.15, r * 0.11, 0, Math.PI * 2);
-      ctx.arc(x + r * 0.24, y - r * 0.15, r * 0.11, 0, Math.PI * 2);
-      ctx.fill();
-      // 안테나
-      ctx.strokeStyle = accentDark;
-      ctx.lineWidth = Math.max(1.5, r * 0.09);
-      ctx.beginPath();
-      ctx.moveTo(x, y - r);
-      ctx.lineTo(x, y - r * 1.35);
-      ctx.stroke();
-      ctx.fillStyle = AMBER;
-      ctx.beginPath();
-      ctx.arc(x, y - r * 1.42, Math.max(2, r * 0.12), 0, Math.PI * 2);
-      ctx.fill();
-    };
 
     // ── 메인 루프
     let last = performance.now();
@@ -704,125 +484,36 @@ export function ArcadeGame({
         fuelFillRef.current.style.opacity = low && Math.sin(elapsed * 8) > 0 ? "0.45" : "1";
       }
 
-      // ── 렌더
-      const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, "#04070f");
-      bg.addColorStop(1, "#0a1024");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, W, H);
-
-      drawStars(0, 0.15, 170, 1.0);
-      drawStars(1, 0.3, 140, 1.4);
-      drawStars(2, 0.55, 120, 1.8);
-      for (const c of CELESTIALS) drawCelestial(c);
-      drawSpecks();
-
-      // 태양 인접 앰버 틴트(≤8%)
-      const tint = sunTintAlpha(joop.pos.x, joop.pos.y);
-      if (tint > 0.003) {
-        ctx.globalAlpha = tint;
-        ctx.fillStyle = AMBER;
-        ctx.fillRect(0, 0, W, H);
-        ctx.globalAlpha = 1;
-      }
-
-      // 분사가스 파티클
-      for (const e of exhaust) {
-        const p = toScreen(e.pos);
-        const t = e.age / 0.6;
-        ctx.globalAlpha = 0.35 - t * 0.27;
-        ctx.fillStyle = e.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 5 + t * 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      // 자석 팔(흡인 중 가까운 순 최대 2개)
+      // ── 렌더 — 순서가 z-order 다(뒤 → 앞). 함수들은 render.ts, 상태 변경 없음.
+      const scene: Scene = { ctx, W, H, u, cam: joop.pos, elapsed, reduceMotion };
+      drawBackground(scene);
+      drawStars(scene, 0, 0.15, 170, 1.0);
+      drawStars(scene, 1, 0.3, 140, 1.4);
+      drawStars(scene, 2, 0.55, 120, 1.8);
+      for (const c of CELESTIALS) drawCelestial(scene, c);
+      drawSpecks(scene);
+      drawSunTint(scene);
+      drawExhaust(scene, exhaust);
       magnetTargets.sort((m, n) => m.d - n.d);
-      for (const { f } of magnetTargets.slice(0, 2)) {
-        const p = toScreen(f.pos);
-        ctx.globalAlpha = 0.5;
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(W / 2, H / 2);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-
-      // 아이템(이모지)
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      for (const f of items) {
-        const p = toScreen(f.pos);
-        if (p.x < -60 || p.x > W + 60 || p.y < -60 || p.y > H + 60) continue;
-        const px = f.item.size * u;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(f.rot);
-        ctx.font = `${px}px sans-serif`;
-        ctx.fillText(f.item.emoji, 0, 0);
-        ctx.restore();
-      }
-
-      // 줍스(항상 화면 중앙)
-      drawJoop(dir, strength);
-
-      // 플로터
-      for (const fl of floaters) {
-        const p = toScreen(fl.pos);
-        const t = 1 - fl.life / 0.9;
-        ctx.globalAlpha = Math.min(1, fl.life * 2.5);
-        ctx.fillStyle = fl.color;
-        ctx.font = `bold ${fl.big ? 18 : 14}px sans-serif`;
-        ctx.fillText(fl.text, p.x, p.y - t * 34);
-        ctx.globalAlpha = 1;
-      }
-
-      // 연료 소진 상태 안내
-      if (fuel <= 0) {
-        ctx.fillStyle = DANGER;
-        ctx.font = "bold 15px sans-serif";
-        ctx.fillText(labelsRef.current.fuelOut, W / 2, H / 2 - JOOP_RADIUS * u - 28);
-      }
-
-      // 조이스틱(5원 링)
-      if (stick) {
-        const R = JOYSTICK_R * u;
-        const js = joystickInput(stick.dx, stick.dy, R);
-        for (let ring = 1; ring <= 5; ring++) {
-          ctx.globalAlpha = js.ring === ring ? 0.5 : 0.16;
-          ctx.strokeStyle = js.ring === ring ? accent : FG_DIM;
-          ctx.lineWidth = js.ring === ring ? 2 : 1;
-          ctx.beginPath();
-          ctx.arc(stick.baseX, stick.baseY, (R * ring) / 5, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        // 노브 — 바깥 링까지로 클램프
-        const dist = Math.hypot(stick.dx, stick.dy);
-        const kx = dist > R ? (stick.dx / dist) * R : stick.dx;
-        const ky = dist > R ? (stick.dy / dist) * R : stick.dy;
-        ctx.globalAlpha = 0.35;
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(stick.baseX, stick.baseY);
-        ctx.lineTo(stick.baseX + kx, stick.baseY + ky);
-        ctx.stroke();
-        ctx.globalAlpha = 0.8;
-        ctx.fillStyle = accent;
-        ctx.beginPath();
-        ctx.arc(stick.baseX + kx, stick.baseY + ky, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
+      drawMagnetArms(
+        scene,
+        magnetTargets.slice(0, 2).map((m) => m.f.pos),
+        accent,
+      );
+      drawItems(scene, items);
+      drawJoop(scene, {
+        radius: JOOP_RADIUS,
+        dir,
+        strength,
+        fuel,
+        collectFx: joop.collectFx,
+        accent,
+        accentLight,
+        accentDark,
+      });
+      drawFloaters(scene, floaters);
+      if (fuel <= 0) drawFuelOutHint(scene, labelsRef.current.fuelOut, JOOP_RADIUS);
+      if (stick) drawJoystick(scene, stick, JOYSTICK_R * u, accent);
 
       raf = requestAnimationFrame(frame);
     };
