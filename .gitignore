@@ -1,0 +1,19 @@
+# 의존성
+node_modules/
+
+# 빌드 산출물
+dist/
+
+# 데모 빌드
+demo/dist/
+
+# 로그·캐시
+*.log
+.DS_Store
+.vite/
+coverage/
+
+# 에디터
+.idea/
+.vscode/
+*.swp
