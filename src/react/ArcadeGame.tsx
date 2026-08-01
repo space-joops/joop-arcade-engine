@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   CELESTIALS,
   DEFAULT_ARCADE_CONFIG,
@@ -18,129 +18,35 @@ import {
   type Vec,
 } from "../core/arcade";
 import * as sfx from "../core/sound";
+import {
+  DEFAULT_ARCADE_LABELS,
+  type ArcadeGameProps,
+  type ArcadeLabels,
+  type ArcadeSummary,
+} from "./types";
+import {
+  AMBER,
+  BG_DEEP,
+  DANGER,
+  FG,
+  FG_DIM,
+  METAL_COLORS,
+  STAR_COLORS,
+  barBtnStyle,
+  flameColor,
+  ghostBtnStyle,
+  mixHex,
+  overlayStyle,
+  primaryBtnStyle,
+} from "./theme";
 
-// ── 공개 타입 ────────────────────────────────────────────────
+export { DEFAULT_ARCADE_LABELS } from "./types";
+export type { ArcadeGameProps, ArcadeLabels, ArcadeSummary } from "./types";
 
 type Phase = "ready" | "playing" | "over";
 
-/** 게임 종료 시 onGameOver 로 전달되는 결과. */
-export type ArcadeSummary = {
-  /** 수거한 조각 수(아이템 가치 합) */
-  collected: number;
-  /** 수거한 아이템 개수 */
-  eaten: number;
-  /** 플레이 시간(초) */
-  elapsed: number;
-  /** 저장된 최고 기록(이번 판 반영 후) */
-  best: number;
-  /** 이번 판이 신기록인지 */
-  newBest: boolean;
-};
-
-/** UI 문자열 전체 — labels prop 으로 부분 교체(i18n)할 수 있다. */
-export type ArcadeLabels = {
-  title: string;
-  subtitle: string;
-  /** 시작 화면 조작 안내 목록 */
-  howTo: string[];
-  start: string;
-  /** HUD 수거 카운터 라벨 */
-  score: string;
-  gameOver: string;
-  resultCollected: string;
-  pieces: string;
-  eatenUnit: string;
-  best: string;
-  newBest: string;
-  retry: string;
-  home: string;
-  quit: string;
-  /** 연료 소진 시 캔버스에 그려지는 안내 */
-  fuelOut: string;
-  soundOnAria: string;
-  soundOffAria: string;
-};
-
-export const DEFAULT_ARCADE_LABELS: ArcadeLabels = {
-  title: "줍스 아케이드 🛰️",
-  subtitle: "우주를 떠다니며 쓰레기를 수거하세요.\n관성이 있어요 — 분사를 멈춰도 계속 흘러갑니다.",
-  howTo: [
-    "🕹️ 화면 아무 곳이나 드래그 = 분사 (링 단계로 세기 조절)",
-    "⌨️ WASD / 방향키도 가능",
-    "⛽ 분사할 때만 연료 소모 — 소진되면 게임 오버",
-    "🧲 가까운 파편은 자석 팔이 끌어당겨요",
-  ],
-  start: "출동! 🚀",
-  score: "수거",
-  gameOver: "게임 오버",
-  resultCollected: "수거",
-  pieces: "조각",
-  eatenUnit: "개",
-  best: "최고 기록",
-  newBest: "🏆 신기록!",
-  retry: "다시하기 🔄",
-  home: "처음으로",
-  quit: "종료",
-  fuelOut: "연료 소진! ⛽를 잡으면 회생",
-  soundOnAria: "소리 켜기",
-  soundOffAria: "소리 끄기",
-};
-
-export interface ArcadeGameProps {
-  /** 물리·밸런스 오버라이드 — 게임 시작 시점 값이 그 판에 적용된다 */
-  config?: Partial<ArcadeConfig>;
-  /** UI 문자열 부분 교체(i18n) */
-  labels?: Partial<ArcadeLabels>;
-  /** 캐릭터·UI 강조색 (기본 #2de2e6) */
-  accentColor?: string;
-  /** false 면 효과음 전체 비활성화(토글 버튼도 숨김) */
-  sound?: boolean;
-  /**
-   * 최고 기록 localStorage 키 프리픽스(`{prefix}:best`).
-   * null 이면 저장하지 않는다. 기본 "joop-arcade".
-   */
-  storagePrefix?: string | null;
-  /** 게임 종료(연료 소진·조기 종료) 시 호출 — 서버 저장 등 호스트 연동 지점 */
-  onGameOver?: (summary: ArcadeSummary) => void;
-  /** 컨테이너 스타일 오버라이드 — 컴포넌트는 부모를 100% 채운다 */
-  style?: CSSProperties;
-  className?: string;
-}
-
-// ── 내부 상수 ────────────────────────────────────────────────
-
 // 조이스틱 바깥 링 반지름(화면 최소변 비율).
 const JOYSTICK_R = 0.24;
-
-const AMBER = "#ffb000";
-const BG_DEEP = "#04070f";
-const FG = "#e7fdff";
-const FG_DIM = "#9fd8dc";
-
-// 별 색온도 팔레트(웜화이트/백/청/주황) — 가중치 4:3:2:1.
-const STAR_COLORS = [
-  "#fff3e4", "#fff3e4", "#fff3e4", "#fff3e4",
-  "#f4f7ff", "#f4f7ff", "#f4f7ff",
-  "#cfe0ff", "#cfe0ff",
-  "#ffd9a8",
-] as const;
-
-// 미세 금속 파편 색(장식 입자 레이어) — 수거 판정 없음.
-const METAL_COLORS = ["#9aa4ab", "#6f7a82", "#c7ccd1"] as const;
-
-/** hex 두 색을 t(0~1)로 채널 보간 — accentColor 에서 명·암 변형을 파생한다. */
-function mixHex(a: string, b: string, t: number): string {
-  const pa = a.replace("#", "");
-  const pb = b.replace("#", "");
-  const ch = (i: number) => {
-    const va = parseInt(pa.slice(i, i + 2), 16);
-    const vb = parseInt(pb.slice(i, i + 2), 16);
-    return Math.round(va + (vb - va) * t)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${ch(0)}${ch(2)}${ch(4)}`;
-}
 
 // ── 컴포넌트 ────────────────────────────────────────────────
 
@@ -256,7 +162,7 @@ export function ArcadeGame({
     type Exhaust = { pos: Vec; vel: Vec; age: number; color: string };
     const exhaust: Exhaust[] = [];
     let exhaustAcc = 0;
-    const flameColor = (s: number) => (s <= 0.4 ? accent : s <= 0.8 ? AMBER : "#ffe9c4");
+    const flame = (s: number) => flameColor(accent, s);
 
     const toScreen = (p: Vec) => ({
       x: W / 2 + (p.x - joop.pos.x) * unit(),
@@ -581,7 +487,7 @@ export function ArcadeGame({
         const px = -fy;
         const py = fx;
         ctx.globalAlpha = 0.85;
-        ctx.fillStyle = flameColor(strength);
+        ctx.fillStyle = flame(strength);
         ctx.beginPath();
         ctx.moveTo(x + fx * r * 0.9 + px * r * 0.35, y + fy * r * 0.9 + py * r * 0.35);
         ctx.lineTo(x + fx * (r + len), y + fy * (r + len));
@@ -698,7 +604,7 @@ export function ArcadeGame({
               y: joop.vel.y * 0.3 - dir.y * (0.18 + 0.25 * strength) + jy * 2,
             },
             age: 0,
-            color: flameColor(strength),
+            color: flame(strength),
           });
         }
       }
@@ -794,7 +700,7 @@ export function ArcadeGame({
         const ratio = fuel / cfg.fuel;
         fuelFillRef.current.style.width = `${Math.max(0, ratio * 100)}%`;
         const low = ratio < 0.25;
-        fuelFillRef.current.style.background = low ? "#ff5c77" : AMBER;
+        fuelFillRef.current.style.background = low ? DANGER : AMBER;
         fuelFillRef.current.style.opacity = low && Math.sin(elapsed * 8) > 0 ? "0.45" : "1";
       }
 
@@ -882,7 +788,7 @@ export function ArcadeGame({
 
       // 연료 소진 상태 안내
       if (fuel <= 0) {
-        ctx.fillStyle = "#ff5c77";
+        ctx.fillStyle = DANGER;
         ctx.font = "bold 15px sans-serif";
         ctx.fillText(labelsRef.current.fuelOut, W / 2, H / 2 - JOOP_RADIUS * u - 28);
       }
@@ -942,50 +848,7 @@ export function ArcadeGame({
     setMutedState(next);
   };
 
-  // ── 스타일 (라이브러리 무의존 — 인라인)
   const accent = accentColor;
-  const overlay: CSSProperties = {
-    position: "absolute",
-    inset: 0,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 24,
-    background: "rgba(4, 7, 15, 0.85)",
-    padding: 24,
-    textAlign: "center",
-    zIndex: 2,
-  };
-  const primaryBtn: CSSProperties = {
-    borderRadius: 9999,
-    border: "none",
-    background: accent,
-    color: BG_DEEP,
-    fontWeight: 700,
-    fontSize: 16,
-    padding: "12px 32px",
-    cursor: "pointer",
-  };
-  const ghostBtn: CSSProperties = {
-    borderRadius: 9999,
-    border: `1px solid ${FG_DIM}66`,
-    background: "transparent",
-    color: FG_DIM,
-    fontWeight: 700,
-    fontSize: 16,
-    padding: "12px 32px",
-    cursor: "pointer",
-  };
-  const barBtn: CSSProperties = {
-    borderRadius: 8,
-    border: "1px solid #1c2b45",
-    background: "transparent",
-    color: FG_DIM,
-    fontSize: 14,
-    padding: "6px 10px",
-    cursor: "pointer",
-  };
 
   const renderMultiline = (text: string): ReactNode =>
     text.split("\n").map((line, i) => (
@@ -1046,7 +909,7 @@ export function ArcadeGame({
 
         {/* 시작 화면 */}
         {phase === "ready" && (
-          <div style={overlay}>
+          <div style={overlayStyle}>
             <div>
               <h1 style={{ fontSize: 34, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }}>
                 {L.title}
@@ -1079,7 +942,7 @@ export function ArcadeGame({
                 <li key={line}>{line}</li>
               ))}
             </ul>
-            <button onClick={() => setPhase("playing")} style={{ ...primaryBtn, fontSize: 18 }}>
+            <button onClick={() => setPhase("playing")} style={{ ...primaryBtnStyle(accent), fontSize: 18 }}>
               {L.start}
             </button>
           </div>
@@ -1087,7 +950,7 @@ export function ArcadeGame({
 
         {/* 게임 오버 */}
         {phase === "over" && summary && (
-          <div style={overlay}>
+          <div style={overlayStyle}>
             <h2 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{L.gameOver}</h2>
             <div>
               <p style={{ fontSize: 18, margin: 0 }}>
@@ -1116,10 +979,10 @@ export function ArcadeGame({
               </p>
             </div>
             <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={() => setPhase("playing")} style={primaryBtn}>
+              <button onClick={() => setPhase("playing")} style={primaryBtnStyle(accent)}>
                 {L.retry}
               </button>
-              <button onClick={() => setPhase("ready")} style={ghostBtn}>
+              <button onClick={() => setPhase("ready")} style={ghostBtnStyle}>
                 {L.home}
               </button>
             </div>
@@ -1161,13 +1024,13 @@ export function ArcadeGame({
           <button
             onClick={toggleMute}
             aria-label={muted ? L.soundOnAria : L.soundOffAria}
-            style={barBtn}
+            style={barBtnStyle}
           >
             {muted ? "🔇" : "🔊"}
           </button>
         )}
         {phase === "playing" && (
-          <button onClick={() => endGameRef.current()} style={barBtn}>
+          <button onClick={() => endGameRef.current()} style={barBtnStyle}>
             {L.quit}
           </button>
         )}
